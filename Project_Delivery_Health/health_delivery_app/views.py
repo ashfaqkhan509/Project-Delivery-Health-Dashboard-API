@@ -36,7 +36,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ClientSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [OrderingFilter]
-    ordering_fields = ["amount_spent", "overall_delivery_health", ""]
+    ordering_fields = ["amount_spent", "overall_delivery_health"]
 
     def get_queryset(self):
         """
@@ -95,7 +95,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
                 ).order_by('-total_spent')
 
             elif ordering == 'delivery_health':
-                
+
                 queryset = queryset.annotate(
                     completed_projects=Count(
                         'projects',
