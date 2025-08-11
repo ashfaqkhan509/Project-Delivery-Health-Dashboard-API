@@ -14,7 +14,7 @@ class Client(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class Team(models.Model):
     name = models.CharField(max_length=255)
@@ -22,12 +22,18 @@ class Team(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='projects', blank=True, null=True)
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='projects',
+        blank=True,
+        null=True
+    )
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='projects')
     budget = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     status = models.CharField(
@@ -47,7 +53,13 @@ class Task(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
-    assigned_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks', blank=True, null=True)
+    assigned_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        blank=True,
+        null=True
+    )
     status = models.CharField(
         max_length=10,
         choices=ProjectStatusChoice.choices,
@@ -58,11 +70,17 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class UserBillingInfo(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='billing_info')
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='billing_info', blank=True, null=True)
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='billing_info',
+        blank=True,
+        null=True
+    )
     hours_worked = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_billible = models.BooleanField(default=True)
@@ -70,7 +88,7 @@ class UserBillingInfo(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}"
-    
+
     @property
     def total_billing(self):
         return self.hours_worked * self.hourly_rate

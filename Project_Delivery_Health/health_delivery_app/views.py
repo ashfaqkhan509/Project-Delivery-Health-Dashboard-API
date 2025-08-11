@@ -1,6 +1,6 @@
-from django.shortcuts import render
+
 from rest_framework import viewsets
-from health_delivery_app.models import *
+from health_delivery_app.models import Client, Project, ProjectStatusChoice
 from health_delivery_app.serializers import ClientSerializer
 from django.utils import timezone
 from datetime import timedelta, datetime
@@ -156,7 +156,8 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
         # Write headers
         if data:
             headers = ['Client Name', 'Total Projects', 'Total Budget', 'Total Amount Spent', 
-                      'Overall Delivery Health', 'Overdue Projects', 'Top 3 Teams']
+                'Overall Delivery Health', 'Overdue Projects', 'Top 3 Teams'
+            ]
             writer.writerow(headers)
 
             # Write data
@@ -173,7 +174,6 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
                     client.get('overdue_projects', 0),
                     top_teams
     ])
-
 
         output.seek(0)
         response = HttpResponse(

@@ -1,8 +1,15 @@
-from health_delivery_app.models import *
+from health_delivery_app.models import (
+    Client,
+    Project,
+    Team,
+    Task,
+    UserBillingInfo,
+    ProjectStatusChoice
+)
 from rest_framework import serializers
 from django.utils import timezone
 from django.db.models import Sum, F, Count, Q, ExpressionWrapper, FloatField, Window
-from django.db.models.functions import DenseRank, TruncDate
+from django.db.models.functions import DenseRank
 from datetime import timedelta
 
 

@@ -18,7 +18,11 @@ class ProjectHealthViewSetTests(APITestCase):
         self.url = "/api/clients/project-health/"
 
         # Create superuser and authenticate
-        self.admin = User.objects.create_user(username="admin", password="pass", is_superuser=True)
+        self.admin = User.objects.create_user(
+            username="admin",
+            password="pass",
+            is_superuser=True
+        )
         self.client.force_authenticate(user=self.admin)
 
         # Sample data
@@ -95,14 +99,18 @@ class ProjectHealthViewSetTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         for client_data in self._get_results(resp):
             projects = client_data.get("projects", [])
-            self.assertTrue(any(project.get("status") == ProjectStatusChoice.COMPLETED for project in projects))
+            self.assertTrue(any(
+                project.get("status") == ProjectStatusChoice.COMPLETED for project in projects
+            ))
 
     def test_filter_by_min_budget(self):
         resp = self.client.get(self.url, {"min_budget": "15000"})
         self.assertEqual(resp.status_code, 200)
         for client_data in self._get_results(resp):
             projects = client_data.get("projects", [])
-            self.assertTrue(any(float(project.get("budget", 0) or 0) >= 15000 for project in projects))
+            self.assertTrue(any(
+                float(project.get("budget", 0) or 0) >= 15000 for project in projects
+            ))
 
     def test_filter_by_start_after(self):
         start_after = (timezone.now() - timedelta(days=5)).date()
@@ -136,7 +144,9 @@ class ProjectHealthViewSetTests(APITestCase):
         self.assertTrue("Client Name" in content)
 
     def test_cache_behavior(self):
-        with self.settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}):
+        with self.settings(
+            CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+        ):
             cache.clear()
             first = self.client.get(self.url)
             second = self.client.get(self.url)
