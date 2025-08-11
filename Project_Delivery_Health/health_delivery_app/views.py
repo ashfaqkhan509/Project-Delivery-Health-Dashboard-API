@@ -17,17 +17,17 @@ import io
 class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that provides project health metrics for clients.
-    
+
     This viewset returns a list of clients with detailed project health information,
     including financial metrics, delivery performance, and team productivity.
-    
+
     Features:
     - Authentication required (IsAuthenticated)
     - Filtering by project status, budget, and start date
     - Ordering by financial and performance metrics
     - Automatic pagination
     - Permission-based data access (managers only see their clients)
-    
+
     Default Behavior:
     - Returns clients with active projects from the last 90 days
     - Includes nested project information with health metrics
@@ -41,7 +41,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """
         Returns a filtered queryset of clients based on request parameters.
-        
+
         Handles:
         - User permissions (non-superusers only see their managed clients)
         - Status filtering (?status=active|completed|overdue)
@@ -49,7 +49,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
         - Date range filtering (?start_after=YYYY-MM-DD)
         - Custom ordering (?ordering=total_spent|delivery_health|overdue_projects)
         - Default filtering (active projects from last 90 days when no filters applied)
-        
+
         Returns:
             QuerySet: Annotated queryset with all necessary prefetching for performance
         """
@@ -88,7 +88,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
             if ordering == 'total_spent':
                 queryset = queryset.annotate(
                     total_spent=Sum(
-                        F('projects__tasks__billing_info__hours_worked') * 
+                        F('projects__tasks__billing_info__hours_worked') *
                         F('projects__tasks__billing_info__hourly_rate'),
                         filter=Q(projects__tasks__billing_info__is_billible=True)
                     )
@@ -118,7 +118,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
                         output_field=FloatField()
                     )
                 ).order_by('-health_percentage')
-            
+
             elif ordering == 'overdue_projects':
                 queryset = queryset.annotate(
                     overdue_count=Count(
@@ -155,7 +155,8 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Write headers
         if data:
-            headers = ['Client Name', 'Total Projects', 'Total Budget', 'Total Amount Spent', 
+            headers = [
+                'Client Name', 'Total Projects', 'Total Budget', 'Total Amount Spent',
                 'Overall Delivery Health', 'Overdue Projects', 'Top 3 Teams'
             ]
             writer.writerow(headers)
@@ -173,7 +174,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
                     client.get('overall_delivery_health', 0),
                     client.get('overdue_projects', 0),
                     top_teams
-    ])
+                ])
 
         output.seek(0)
         response = HttpResponse(

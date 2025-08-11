@@ -37,7 +37,7 @@ jobs:
 
     defaults:
       run:
-       working-directory: Project_dDelivery_Health
+       working-directory: Project_Delivery_Health
 
     steps:
       - name: Checkout code

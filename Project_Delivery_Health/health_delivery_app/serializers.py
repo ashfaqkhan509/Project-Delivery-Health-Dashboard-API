@@ -1,7 +1,6 @@
 from health_delivery_app.models import (
     Client,
     Project,
-    Team,
     Task,
     UserBillingInfo,
     ProjectStatusChoice

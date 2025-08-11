@@ -29,7 +29,7 @@ class TaskAdmin(admin.ModelAdmin):
     search_fields = ('name', 'project__name', 'assigned_user__username')
     list_filter = ('status', 'due_date')
     raw_id_fields = ('project', 'assigned_user')
-    
+
 
 @admin.register(UserBillingInfo)
 class UserBillingInfoAdmin(admin.ModelAdmin):
