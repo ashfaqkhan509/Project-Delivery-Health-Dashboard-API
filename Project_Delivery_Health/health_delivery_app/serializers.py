@@ -37,11 +37,11 @@ class ProjectSerializer(serializers.ModelSerializer):
         delayed_tasks = obj.tasks.filter(status=ProjectStatusChoice.OVERDUE)
         if not delayed_tasks:
             return 0
-        total_delay = sum((task.due_date - task.project.start_date).days for task in delayed_tasks)
+        total_delay = sum((task.due_date - task.start_date).days for task in delayed_tasks)
         return total_delay / delayed_tasks.count()
 
     def get_amount_spent(self, obj):
-        client = obj.client  # This is the Client instance from the Project
+        client = obj.client
         result = UserBillingInfo.objects.filter(
             task__project__client=client
         ).aggregate(

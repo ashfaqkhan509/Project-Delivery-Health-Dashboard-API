@@ -95,7 +95,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
                 ).order_by('-total_spent')
 
             elif ordering == 'delivery_health':
-                # Fixed the F() object comparison issue
+                
                 queryset = queryset.annotate(
                     completed_projects=Count(
                         'projects',
