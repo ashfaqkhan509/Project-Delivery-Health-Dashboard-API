@@ -4,7 +4,8 @@ from datetime import timedelta, datetime
 from decimal import Decimal
 from django.core.cache import cache
 from django.contrib.auth import get_user_model
-
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from health_delivery_app.models import (
     Client, Project, Task, UserBillingInfo, ProjectStatusChoice, Team
 )
@@ -14,7 +15,27 @@ User = get_user_model()
 
 
 class ProjectHealthViewSetTests(APITestCase):
+    """
+    Test suite for the ProjectHealthViewSet API endpoints.
+
+    This class tests various aspects of the project health reporting functionality including:
+    - Listing client projects with health metrics
+    - Filtering by project status, budget, and start date
+    - Ordering by different health metrics
+    - CSV export functionality
+    - Caching behavior
+
+    The setUp method creates test data including:
+    - An admin user for authentication
+    - A client with manager
+    - Multiple projects with different statuse and budgets
+    - Tasks associated with projects
+    - User billing information
+    - Team assignments
+    """
+
     def setUp(self):
+        """Initialize test data and authenticate admin user."""
         self.url = "/api/clients/project-health/"
 
         # Create superuser and authenticate
@@ -83,11 +104,19 @@ class ProjectHealthViewSetTests(APITestCase):
         self.client_obj = client_obj
 
     def _get_results(self, resp):
-        """Helper to extract 'results' from paginated response"""
+        """Helper to extract 'results' from paginated response.
+        
+        Args:
+            resp: The API response object
+            
+        Returns:
+            The results list from paginated response or the entire data if not paginated
+        """
         data = resp.json()
         return data.get("results", data)
 
     def test_list_clients(self):
+        """Test basic listing of clients with project health data."""
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         results = self._get_results(resp)
@@ -95,6 +124,7 @@ class ProjectHealthViewSetTests(APITestCase):
         self.assertIn("total_projects", results[0])
 
     def test_filter_by_status(self):
+        """Test filtering projects by status."""
         resp = self.client.get(self.url, {"status": ProjectStatusChoice.COMPLETED})
         self.assertEqual(resp.status_code, 200)
         for client_data in self._get_results(resp):
@@ -104,6 +134,7 @@ class ProjectHealthViewSetTests(APITestCase):
             ))
 
     def test_filter_by_min_budget(self):
+        """Test filtering projects by minimum budget."""
         resp = self.client.get(self.url, {"min_budget": "15000"})
         self.assertEqual(resp.status_code, 200)
         for client_data in self._get_results(resp):
@@ -113,6 +144,7 @@ class ProjectHealthViewSetTests(APITestCase):
             ))
 
     def test_filter_by_start_after(self):
+        """Test filtering projects by start date."""
         start_after = (timezone.now() - timedelta(days=5)).date()
         resp = self.client.get(self.url, {"start_after": str(start_after)})
         self.assertEqual(resp.status_code, 200)
@@ -124,18 +156,22 @@ class ProjectHealthViewSetTests(APITestCase):
                     self.assertGreaterEqual(parsed, start_after)
 
     def test_order_by_total_spent(self):
+        """Test ordering results by total spent amount."""
         resp = self.client.get(self.url, {"ordering": "total_spent"})
         self.assertEqual(resp.status_code, 200)
 
     def test_order_by_delivery_health(self):
+        """Test ordering results by delivery health metric."""
         resp = self.client.get(self.url, {"ordering": "delivery_health"})
         self.assertEqual(resp.status_code, 200)
 
     def test_order_by_overdue_projects(self):
+        """Test ordering results by number of overdue projects."""
         resp = self.client.get(self.url, {"ordering": "overdue_projects"})
         self.assertEqual(resp.status_code, 200)
 
     def test_csv_export(self):
+        """Test CSV export functionality."""
         resp = self.client.get(self.url, {"format": "csv"})
         self.assertEqual(resp.status_code, 200)
         content_type = resp.headers.get("Content-Type")
@@ -144,10 +180,21 @@ class ProjectHealthViewSetTests(APITestCase):
         self.assertTrue("Client Name" in content)
 
     def test_cache_behavior(self):
+        """Test that caching reduces database queries for subsequent requests."""
         with self.settings(
             CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
         ):
             cache.clear()
-            first = self.client.get(self.url)
-            second = self.client.get(self.url)
-            self.assertEqual(first.content, second.content)
+
+            with CaptureQueriesContext(connection) as first_request_queries:
+                response_first = self.client.get(self.url)
+            queries_first = len(first_request_queries)
+
+            with CaptureQueriesContext(connection) as second_request_queries:
+                response_second = self.client.get(self.url)
+            queries_second = len(second_request_queries)
+
+            self.assertEqual(response_first.content, response_second.content)
+
+            self.assertLess(queries_second, queries_first,
+                f"Expected fewer DB queries on cached response, but got {queries_second} vs {queries_first}")
