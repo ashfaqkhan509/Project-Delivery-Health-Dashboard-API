@@ -74,7 +74,7 @@ class ProjectHealthViewSetTests(APITestCase):
             actual_end_date=now - timedelta(days=5)
         )
 
-        task1 = Task.objects.create(
+        Task.objects.create(
             name="T1",
             project=project1,
             assigned_user=manager,
@@ -85,7 +85,7 @@ class ProjectHealthViewSetTests(APITestCase):
             total_hours_worked=Decimal("8.00")
         )
 
-        task2 = Task.objects.create(
+        Task.objects.create(
             name="T2",
             project=project2,
             assigned_user=billing_user,
@@ -96,7 +96,7 @@ class ProjectHealthViewSetTests(APITestCase):
             total_hours_worked=Decimal("10.00")
         )
 
-        task3 = Task.objects.create(
+        Task.objects.create(
             name="T3",
             project=project1,
             assigned_user=billing_user,
@@ -106,7 +106,7 @@ class ProjectHealthViewSetTests(APITestCase):
             total_hours_worked=Decimal("5.00")
         )
 
-        task4 = Task.objects.create(
+        Task.objects.create(
             name="T4",
             project=project2,
             assigned_user=manager,
@@ -133,10 +133,10 @@ class ProjectHealthViewSetTests(APITestCase):
 
     def _get_results(self, resp):
         """Helper to extract 'results' from paginated response.
-        
+
         Args:
             resp: The API response object
-            
+
         Returns:
             The results list from paginated response or the entire data if not paginated
         """
@@ -224,5 +224,7 @@ class ProjectHealthViewSetTests(APITestCase):
 
             self.assertEqual(response_first.content, response_second.content)
 
-            self.assertLess(queries_second, queries_first,
-                f"Expected fewer DB queries on cached response, but got {queries_second} vs {queries_first}")
+            self.assertLess(
+                queries_second,
+                queries_first
+            )

@@ -1,14 +1,18 @@
-# tests/test_tasks.py
 from django.test import TestCase
 from django.core.cache import cache
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
-from health_delivery_app.models import Team, Task, Project, Client, ProjectStatusChoice, TaskStatusChoice
+from health_delivery_app.models import (
+    Team,
+    Task,
+    Project,
+    Client,
+    ProjectStatusChoice,
+    TaskStatusChoice
+)
 from health_delivery_app.tasks import recompute_delivery_velocity
 from django.contrib.auth import get_user_model
-from django.utils import timezone
-from datetime import timedelta
 
 
 User = get_user_model()

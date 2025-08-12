@@ -3,13 +3,12 @@ from health_delivery_app.models import (
     Client,
     Project,
     Task,
-    UserBillingInfo,
     ProjectStatusChoice,
     TaskStatusChoice
 )
 from rest_framework import serializers
 from django.utils import timezone
-from django.db.models import Sum, F, Count, Q, ExpressionWrapper, FloatField, Window
+from django.db.models import Sum, F, Count, ExpressionWrapper, FloatField, Window
 from django.db.models.functions import DenseRank
 from datetime import timedelta
 
@@ -75,12 +74,12 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_average_task_delay(self, obj):
         delayed_tasks = obj.tasks.filter(
             actual_end_date__isnull=False,
-            actual_end_date__gt = F('due_date')
+            actual_end_date__gt=F('due_date')
         )
         if not delayed_tasks:
             return 0
         total_delay = sum(
-            (task.actual_end_date - task.due_date).days 
+            (task.actual_end_date - task.due_date).days
             for task in delayed_tasks
         )
         return total_delay / delayed_tasks.count()
@@ -90,9 +89,11 @@ class ProjectSerializer(serializers.ModelSerializer):
             assigned_user__billing_info__isnull=False,
             total_hours_worked__gt=0
         ).aggregate(
-            total_amount=Sum(F('total_hours_worked') * F('assigned_user__billing_info__hourly_rate'))
+            total_amount=Sum(
+                F('total_hours_worked') * F('assigned_user__billing_info__hourly_rate')
+            )
         )['total_amount'] or 0
-        
+
         return round(total, 2)
 
     def get_team_delivery_speed(self, obj):
@@ -101,9 +102,9 @@ class ProjectSerializer(serializers.ModelSerializer):
         """
         if not obj.team:
             return 0.0
-        
+
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
-        
+
         result = Task.objects.filter(
             project__team=obj.team,
             status=TaskStatusChoice.DONE,
@@ -111,9 +112,9 @@ class ProjectSerializer(serializers.ModelSerializer):
         ).aggregate(
             total_tasks=Count('id')
         )
-    
+
         total_tasks = result['total_tasks'] or 0
-        
+
         return round(total_tasks / 30, 2)
 
     def get_lead_developer(self, obj):

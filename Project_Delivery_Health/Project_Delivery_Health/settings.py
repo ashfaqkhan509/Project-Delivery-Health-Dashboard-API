@@ -127,7 +127,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # REST Framework settings
 REST_FRAMEWORK = {
-    
+
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
@@ -166,4 +166,3 @@ CELERY_BEAT_SCHEDULE = {
 
 # custom user model
 AUTH_USER_MODEL = 'health_delivery_app.CustomUser'
-

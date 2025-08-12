@@ -1,7 +1,11 @@
-
 from rest_framework import viewsets
-from health_delivery_app.models import Client, Project, ProjectStatusChoice, CustomUser
-from health_delivery_app.serializers import ClientSerializer, UserSerializer, UserLoginSerializer, RegisterSerializer
+from health_delivery_app.models import Client, ProjectStatusChoice, CustomUser
+from health_delivery_app.serializers import (
+    ClientSerializer,
+    UserSerializer,
+    UserLoginSerializer,
+    RegisterSerializer
+)
 from django.utils import timezone
 from datetime import timedelta, datetime
 from rest_framework.permissions import IsAuthenticated
@@ -54,7 +58,7 @@ class UserLoginView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
