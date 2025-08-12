@@ -86,6 +86,17 @@ class UserLoginView(APIView):
 
 
 class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only API endpoint for viewing client and project health metrics.
+
+    - Superusers can view all clients.
+    - Managers can only view clients linked to teams they are members of.
+    - Regular users cannot access this view.
+    - Supports filtering by project status, budget, and start date.
+    - Supports ordering by total spent, delivery health, and overdue projects.
+    - Can return results in JSON or export as CSV.
+    """
+    
     serializer_class = ClientSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [OrderingFilter]

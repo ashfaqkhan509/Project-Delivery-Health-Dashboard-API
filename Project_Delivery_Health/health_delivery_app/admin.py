@@ -6,11 +6,8 @@ from django.contrib.auth.admin import UserAdmin
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     """
-    Update User Admin view in 4 parts
-        - Username, password,
-        - first_name, last_name
-        - is_active, is_staff, is_superuser
-        - last login
+    Admin interface customization for the CustomUser model.
+    Displays and manages user credentials, personal information, and permissions.
     """
     model = CustomUser
     list_display = ('email', 'is_staff', 'is_active', 'is_manager')
@@ -40,12 +37,20 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing clients.
+    Allows searching and listing client names.
+    """
     list_display = ("name",)
     search_fields = ("name",)
 
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing teams.
+    Supports member search and horizontal member selection.
+    """
     list_display = ("name",)
     search_fields = ("name", "members__first_name", "memebers__last_name")
     filter_horizontal = ("members",)
@@ -53,6 +58,10 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing projects.
+    Displays project details and allows filtering by status and dates.
+    """
     list_display = ("name", "client", "status", "start_date", "end_date", "actual_end_date")
     search_fields = ("name", "client__name")
     list_filter = ("status", "start_date", "end_date")
@@ -61,6 +70,10 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing tasks.
+    Shows assigned user, project, status, and due date.
+    """
     list_display = ("name", "project", "assigned_user", "status", "due_date", "total_hours_worked")
     search_fields = ("name", "project__name", "assigned_user__username")
     list_filter = ("status", "due_date")
@@ -69,6 +82,10 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(UserBillingInfo)
 class UserBillingInfoAdmin(admin.ModelAdmin):
+    """
+    Admin interface for managing user billing information.
+    Displays hourly rates and supports user search.
+    """
     list_display = ("user", "hourly_rate")
     search_fields = ("user__username",)
 

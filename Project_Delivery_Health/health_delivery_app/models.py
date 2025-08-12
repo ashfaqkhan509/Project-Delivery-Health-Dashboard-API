@@ -5,12 +5,11 @@ from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     """
-    Custom user model manager where email is the unique identifiers
-    for authentication instead of usernames.
+    Manager for CustomUser model using email as the unique identifier.
     """
     def create_user(self, email, password=None, **extra_fields):
         """
-        Create and save a user with the given email and password.
+        Create and save a regular user with the given email and password.
         """
         if not email:
             raise ValueError("Users must have an email address")
@@ -22,7 +21,7 @@ class CustomUserManager(BaseUserManager):
 
     def create_superuser(self, email, password=None, **extra_fields):
         """
-        Create and save a SuperUser with the given email and password.
+        Create and save a superuser with the given email and password.
         """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -33,7 +32,7 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     """
-    Custom User Model to make email the primary field instead of username.
+    Custom user model that uses email instead of username for authentication.
     """
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30, blank=True)
@@ -53,18 +52,27 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class ProjectStatusChoice(models.TextChoices):
+    """
+    Choices for the status of a project.
+    """
     ACTIVE = "active", "Active"
     COMPLETED = "completed", "Completed"
     OVERDUE = "overdue", "Overdue"
 
 
 class TaskStatusChoice(models.TextChoices):
+    """
+    Choices for the status of a task.
+    """
     IN_PROGRESS = "in_progress", "In Progress"
     REVIEW = "review", "In Review"
     DONE = "done", "Done"
 
 
 class Client(models.Model):
+    """
+    Represents a client for whom projects are undertaken.
+    """
     name = models.CharField(max_length=255)
 
     def __str__(self):
@@ -72,6 +80,9 @@ class Client(models.Model):
 
 
 class Team(models.Model):
+    """
+    Represents a team of users working on projects.
+    """
     name = models.CharField(max_length=255)
     members = models.ManyToManyField(CustomUser, related_name='teams')
 
@@ -80,6 +91,9 @@ class Team(models.Model):
 
 
 class Project(models.Model):
+    """
+    Represents a project assigned to a team for a client.
+    """
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     team = models.ForeignKey(
@@ -105,6 +119,9 @@ class Project(models.Model):
 
 
 class Task(models.Model):
+    """
+    Represents a task within a project assigned to a user.
+    """
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
@@ -130,6 +147,9 @@ class Task(models.Model):
 
 
 class UserBillingInfo(models.Model):
+    """
+    Stores billing information for a user, including hourly rate.
+    """
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='billing_info')
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 

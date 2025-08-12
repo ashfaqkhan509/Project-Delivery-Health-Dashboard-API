@@ -19,6 +19,15 @@ User = get_user_model()
 
 
 class RecomputeDeliveryVelocityTaskTests(TestCase):
+    """
+    Tests for the `recompute_delivery_velocity` task.
+
+    This suite verifies that:
+    - Delivery velocities are correctly recalculated based on tasks.
+    - The computed velocities are stored in the cache under the `team_velocities` key.
+    - The task returns a confirmation message after recomputation.
+    """
+
     def setUp(self):
         cache.clear()
         self.today = timezone.now().date()
