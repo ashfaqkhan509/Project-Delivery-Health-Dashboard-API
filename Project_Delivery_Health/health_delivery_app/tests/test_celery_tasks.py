@@ -4,9 +4,11 @@ from django.core.cache import cache
 from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
-from health_delivery_app.models import Team, Task, Project, Client, ProjectStatusChoice
+from health_delivery_app.models import Team, Task, Project, Client, ProjectStatusChoice, TaskStatusChoice
 from health_delivery_app.tasks import recompute_delivery_velocity
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
 
 
 User = get_user_model()
@@ -17,9 +19,9 @@ class RecomputeDeliveryVelocityTaskTests(TestCase):
         cache.clear()
         self.today = timezone.now().date()
 
-        self.user = User.objects.create_user(username="testuser", password="pass")
+        self.user = User.objects.create_user(email="testuser@gmail.com", password="pass")
 
-        self.client_obj = Client.objects.create(name="Test Client", manager=self.user)
+        self.client_obj = Client.objects.create(name="Test Client")
 
         self.team = Team.objects.create(name="Test Team")
 
@@ -33,30 +35,36 @@ class RecomputeDeliveryVelocityTaskTests(TestCase):
         )
 
         Task.objects.create(
-            name="Task 1",
+            name="T1",
             project=self.project,
             assigned_user=self.user,
-            status=ProjectStatusChoice.COMPLETED,
+            status=TaskStatusChoice.DONE,
+            start_date=self.today - timedelta(days=35),
             due_date=self.today - timedelta(days=5),
-            actual_end_date=self.today - timedelta(days=3)
+            actual_end_date=self.today - timedelta(days=3),
+            total_hours_worked=Decimal("8.00")
         )
 
         Task.objects.create(
-            name="Task 2",
+            name="T2",
             project=self.project,
             assigned_user=self.user,
-            status=ProjectStatusChoice.COMPLETED,
+            status=TaskStatusChoice.DONE,
+            start_date=self.today - timedelta(days=40),
             due_date=self.today - timedelta(days=15),
-            actual_end_date=self.today - timedelta(days=10)
+            actual_end_date=self.today - timedelta(days=10),
+            total_hours_worked=Decimal("10.00")
         )
 
         Task.objects.create(
-            name="Task 3",
+            name="T3",
             project=self.project,
             assigned_user=self.user,
-            status=ProjectStatusChoice.COMPLETED,
+            status=TaskStatusChoice.IN_PROGRESS,
+            start_date=self.today - timedelta(days=50),
             due_date=self.today - timedelta(days=40),
-            actual_end_date=self.today - timedelta(days=35)
+            actual_end_date=self.today - timedelta(days=35),
+            total_hours_worked=Decimal("5.00")
         )
 
     def test_recompute_delivery_velocity(self):

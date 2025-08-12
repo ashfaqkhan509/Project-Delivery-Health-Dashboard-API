@@ -2,7 +2,7 @@ from celery import shared_task
 from django.core.cache import cache
 from django.utils import timezone
 from datetime import timedelta
-from .models import Team, Task, ProjectStatusChoice
+from .models import Team, Task, TaskStatusChoice
 
 
 @shared_task
@@ -18,7 +18,7 @@ def recompute_delivery_velocity():
     for team in teams:
         completed_tasks = Task.objects.filter(
             project__team=team,
-            status=ProjectStatusChoice.COMPLETED,
+            status=TaskStatusChoice.DONE,
             actual_end_date__gte=thirty_days_ago
         ).count()
 

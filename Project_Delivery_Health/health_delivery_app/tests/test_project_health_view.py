@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from health_delivery_app.models import (
-    Client, Project, Task, UserBillingInfo, ProjectStatusChoice, Team
+    Client, Project, Task, UserBillingInfo, ProjectStatusChoice, Team, TaskStatusChoice
 )
 
 
@@ -40,7 +40,7 @@ class ProjectHealthViewSetTests(APITestCase):
 
         # Create superuser and authenticate
         self.admin = User.objects.create_user(
-            username="admin",
+            email="admin@gmail.com",
             password="pass",
             is_superuser=True
         )
@@ -48,11 +48,11 @@ class ProjectHealthViewSetTests(APITestCase):
 
         # Sample data
         now = timezone.now().date()
-        manager = User.objects.create_user(username="manager", password="pass")
-        billing_user = User.objects.create_user(username="billuser", password="pass")
+        manager = User.objects.create_user(email="manager@gmail.com", password="pass")
+        billing_user = User.objects.create_user(email="testuser@gmail.com", password="pass")
 
-        team = Team.objects.create(name="Alpha Team")
-        client_obj = Client.objects.create(name="Test Client", manager=manager)
+        team = Team.objects.create(name="Test Team")
+        client_obj = Client.objects.create(name="Test Client")
 
         project1 = Project.objects.create(
             name="P1",
@@ -74,30 +74,58 @@ class ProjectHealthViewSetTests(APITestCase):
             actual_end_date=now - timedelta(days=5)
         )
 
-        Task.objects.create(
+        task1 = Task.objects.create(
             name="T1",
             project=project1,
             assigned_user=manager,
-            status=ProjectStatusChoice.COMPLETED,
+            status=TaskStatusChoice.DONE,
+            start_date=now - timedelta(days=8),
             due_date=now - timedelta(days=3),
-            actual_end_date=now - timedelta(days=2)
+            actual_end_date=now - timedelta(days=2),
+            total_hours_worked=Decimal("8.00")
         )
 
         task2 = Task.objects.create(
             name="T2",
             project=project2,
-            assigned_user=manager,
-            status=ProjectStatusChoice.COMPLETED,
+            assigned_user=billing_user,
+            status=TaskStatusChoice.DONE,
+            start_date=now - timedelta(days=35),
             due_date=now - timedelta(days=6),
-            actual_end_date=now - timedelta(days=5)
+            actual_end_date=now - timedelta(days=5),
+            total_hours_worked=Decimal("10.00")
+        )
+
+        task3 = Task.objects.create(
+            name="T3",
+            project=project1,
+            assigned_user=billing_user,
+            status=TaskStatusChoice.IN_PROGRESS,
+            start_date=now - timedelta(days=95),
+            due_date=now - timedelta(days=15),
+            total_hours_worked=Decimal("5.00")
+        )
+
+        task4 = Task.objects.create(
+            name="T4",
+            project=project2,
+            assigned_user=manager,
+            status=TaskStatusChoice.DONE,
+            start_date=now - timedelta(days=4),
+            due_date=now - timedelta(days=1),
+            actual_end_date=now - timedelta(days=1),
+            total_hours_worked=Decimal("12.00")
+        )
+
+        # Create billing info (OneToOne relationship with User)
+        UserBillingInfo.objects.create(
+            user=manager,
+            hourly_rate=Decimal("150.00")
         )
 
         UserBillingInfo.objects.create(
             user=billing_user,
-            task=task2,
-            hours_worked=Decimal("10.00"),
-            hourly_rate=Decimal("100.00"),
-            is_billible=True
+            hourly_rate=Decimal("100.00")
         )
 
         team.members.add(manager, billing_user)
@@ -117,17 +145,17 @@ class ProjectHealthViewSetTests(APITestCase):
 
     def test_list_clients(self):
         """Test basic listing of clients with project health data."""
-        resp = self.client.get(self.url)
-        self.assertEqual(resp.status_code, 200)
-        results = self._get_results(resp)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        results = self._get_results(response)
         self.assertIsInstance(results, list)
         self.assertIn("total_projects", results[0])
 
     def test_filter_by_status(self):
         """Test filtering projects by status."""
-        resp = self.client.get(self.url, {"status": ProjectStatusChoice.COMPLETED})
-        self.assertEqual(resp.status_code, 200)
-        for client_data in self._get_results(resp):
+        response = self.client.get(self.url, {"status": ProjectStatusChoice.COMPLETED})
+        self.assertEqual(response.status_code, 200)
+        for client_data in self._get_results(response):
             projects = client_data.get("projects", [])
             self.assertTrue(any(
                 project.get("status") == ProjectStatusChoice.COMPLETED for project in projects
@@ -135,9 +163,9 @@ class ProjectHealthViewSetTests(APITestCase):
 
     def test_filter_by_min_budget(self):
         """Test filtering projects by minimum budget."""
-        resp = self.client.get(self.url, {"min_budget": "15000"})
-        self.assertEqual(resp.status_code, 200)
-        for client_data in self._get_results(resp):
+        response = self.client.get(self.url, {"min_budget": "15000"})
+        self.assertEqual(response.status_code, 200)
+        for client_data in self._get_results(response):
             projects = client_data.get("projects", [])
             self.assertTrue(any(
                 float(project.get("budget", 0) or 0) >= 15000 for project in projects
@@ -146,9 +174,9 @@ class ProjectHealthViewSetTests(APITestCase):
     def test_filter_by_start_after(self):
         """Test filtering projects by start date."""
         start_after = (timezone.now() - timedelta(days=5)).date()
-        resp = self.client.get(self.url, {"start_after": str(start_after)})
-        self.assertEqual(resp.status_code, 200)
-        for client_data in self._get_results(resp):
+        response = self.client.get(self.url, {"start_after": str(start_after)})
+        self.assertEqual(response.status_code, 200)
+        for client_data in self._get_results(response):
             for project in client_data.get("projects", []):
                 start_date = project.get("start_date")
                 if start_date:
@@ -157,26 +185,26 @@ class ProjectHealthViewSetTests(APITestCase):
 
     def test_order_by_total_spent(self):
         """Test ordering results by total spent amount."""
-        resp = self.client.get(self.url, {"ordering": "total_spent"})
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(self.url, {"ordering": "total_spent"})
+        self.assertEqual(response.status_code, 200)
 
     def test_order_by_delivery_health(self):
         """Test ordering results by delivery health metric."""
-        resp = self.client.get(self.url, {"ordering": "delivery_health"})
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(self.url, {"ordering": "delivery_health"})
+        self.assertEqual(response.status_code, 200)
 
     def test_order_by_overdue_projects(self):
         """Test ordering results by number of overdue projects."""
-        resp = self.client.get(self.url, {"ordering": "overdue_projects"})
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(self.url, {"ordering": "overdue_projects"})
+        self.assertEqual(response.status_code, 200)
 
     def test_csv_export(self):
         """Test CSV export functionality."""
-        resp = self.client.get(self.url, {"format": "csv"})
-        self.assertEqual(resp.status_code, 200)
-        content_type = resp.headers.get("Content-Type")
+        response = self.client.get(self.url, {"format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        content_type = response.headers.get("Content-Type")
         self.assertIn("text/csv", content_type)
-        content = resp.content.decode()
+        content = response.content.decode()
         self.assertTrue("Client Name" in content)
 
     def test_cache_behavior(self):
