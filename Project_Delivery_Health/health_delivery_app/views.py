@@ -96,7 +96,7 @@ class ProjectHealthViewSet(viewsets.ReadOnlyModelViewSet):
     - Supports ordering by total spent, delivery health, and overdue projects.
     - Can return results in JSON or export as CSV.
     """
-    
+
     serializer_class = ClientSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [OrderingFilter]
